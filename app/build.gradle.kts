@@ -15,14 +15,13 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        // === TAMBAHKAN BLOK INI ===
         externalNativeBuild {
             cmake {
-                // Memerintahkan compiler untuk menggunakan standar C++17
                 cppFlags += "-std=c++17"
+                // TAMBAHKAN BARIS INI UNTUK MENYELESAIKAN ERROR STL:
+                arguments += "-DANDROID_STL=c++_shared"
             }
         }
-        // ==========================
     }
 
     buildTypes {
