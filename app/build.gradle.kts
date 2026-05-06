@@ -14,6 +14,15 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // === TAMBAHKAN BLOK INI ===
+        externalNativeBuild {
+            cmake {
+                // Memerintahkan compiler untuk menggunakan standar C++17
+                cppFlags += "-std=c++17"
+            }
+        }
+        // ==========================
     }
 
     buildTypes {
@@ -37,10 +46,13 @@ android {
     }
     buildFeatures {
         viewBinding = true
+        prefab = true // Tambahkan baris ini wajib untuk Oboe
     }
 }
 
 dependencies {
+
+    implementation("com.google.oboe:oboe:1.8.0")
 
     implementation(libs.appcompat)
     implementation(libs.material)
