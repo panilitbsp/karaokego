@@ -62,17 +62,17 @@ public:
     }
 
     oboe::DataCallbackResult onAudioReady(oboe::AudioStream *audioStream, void *audioData, int32_t numFrames) override {
+
+        // 1. Sapu bersih dulu memorinya menjadi 0 (Hening/Silence)
+        // Ini kunci untuk menghilangkan suara "hnggggg" atau kresek-kresek statis
+        int bytesPerFrame = audioStream->getBytesPerFrame();
+        memset(audioData, 0, numFrames * bytesPerFrame);
+
+        // 2. Baru tarik suara dari Mic untuk mengisi memori yang sudah bersih
         if (mRecordStream) {
-            auto result = mRecordStream->read(audioData, numFrames, 0);
-            if (result == oboe::Result::OK) {
-                int framesRead = result.value();
-                // Jika mic telat mengirim data, isi sisa ruang dengan 0 agar suara tidak menjadi bunyi kresek-kresek
-                if (framesRead < numFrames) {
-                    int bytesPerFrame = audioStream->getBytesPerFrame();
-                    memset(static_cast<uint8_t*>(audioData) + (framesRead * bytesPerFrame), 0, (numFrames - framesRead) * bytesPerFrame);
-                }
-            }
+            mRecordStream->read(audioData, numFrames, 0);
         }
+
         return oboe::DataCallbackResult::Continue;
     }
 };
