@@ -3,11 +3,13 @@
 #include <android/log.h>
 #include <memory>
 
-// Import SDK Superpowered
 #include <Superpowered.h>
 #include <SuperpoweredReverb.h>
 #include <SuperpoweredEcho.h>
-#include <SuperpoweredFlanger.h>
+
+// [TAMBAHAN BARU] Import alat Equalizer dan Autotune Asli!
+#include <Superpowered3BandEQ.h>
+#include <SuperpoweredAutomaticVocalPitchCorrection.h>
 
 #define LOG_TAG "MesinKaraoke"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
@@ -20,29 +22,25 @@ private:
 
     int currentEffectMode = 0;
 
-    // Wadah efek
-    Superpowered::Reverb* reverbSyahrini;
-    Superpowered::Echo* echoKaraoke;
-    Superpowered::Flanger* efekTreasure;
+    // [SOLUSI CRASH] Pointer efek kita jadikan nilai awal kosong (nullptr)
+    Superpowered::Reverb* reverbSyahrini = nullptr;
+    Superpowered::Echo* echoKaraoke = nullptr;
+    Superpowered::AutomaticVocalPitchCorrection* efekAutotune = nullptr;
+    Superpowered::ThreeBandEQ* eqSyahrini = nullptr;
 
 public:
     bool start() {
-        // 1. Inisialisasi Superpowered (HANYA 1 ARGUMEN)
-        Superpowered::Initialize("ExampleLicenseKey-WillWorkForAWhile");
+        // PASTE KUNCI ASLIMU DI SINI LAGI YA
+        Superpowered::Initialize("S1pyd3VCajBabTFvWjRkMTE1YWE1ZWVhNDJjZmJlODVmYzJiNGFjNmMyNzhmMjRjN2YxNDhMZGsxREd6U3JNZmJnWmd2VEE0");
 
-        // --- Konfigurasi Mic (Input Mono) ---
         oboe::AudioStreamBuilder recordBuilder;
         recordBuilder.setDirection(oboe::Direction::Input);
         recordBuilder.setPerformanceMode(oboe::PerformanceMode::LowLatency);
         recordBuilder.setFormat(oboe::AudioFormat::Float);
         recordBuilder.setChannelCount(1);
 
-        if (recordBuilder.openStream(mRecordStream) != oboe::Result::OK) {
-            LOGE("Gagal buka mic!");
-            return false;
-        }
+        if (recordBuilder.openStream(mRecordStream) != oboe::Result::OK) return false;
 
-        // --- Konfigurasi Speaker (Output Stereo) ---
         oboe::AudioStreamBuilder playBuilder;
         playBuilder.setDirection(oboe::Direction::Output);
         playBuilder.setPerformanceMode(oboe::PerformanceMode::LowLatency);
@@ -50,30 +48,40 @@ public:
         playBuilder.setChannelCount(2);
         playBuilder.setDataCallback(this);
 
-        if (playBuilder.openStream(mPlayStream) != oboe::Result::OK) {
-            LOGE("Gagal buka speaker!");
-            return false;
-        }
+        if (playBuilder.openStream(mPlayStream) != oboe::Result::OK) return false;
 
         int sampleRate = mPlayStream->getSampleRate();
 
-        // 2. Setup Efek Syahrini (Menggunakan variabel 'mix')
-        reverbSyahrini = new Superpowered::Reverb(sampleRate);
-        reverbSyahrini->enabled = true;
-        reverbSyahrini->mix = 0.3f;
+        // Kita hanya membuat efek SEKALI seumur hidup aplikasi biar nggak pernah crash
+        if (reverbSyahrini == nullptr) {
+            reverbSyahrini = new Superpowered::Reverb(sampleRate);
+            reverbSyahrini->enabled = true;
+            reverbSyahrini->mix = 0.15f; // [SOLUSI] Mix dikecilin biar suara nggak kebesaran
+        }
 
-        // 3. Setup Efek Karaoke (Menggunakan fungsi 'setMix')
-        echoKaraoke = new Superpowered::Echo(sampleRate);
-        echoKaraoke->enabled = true;
-        echoKaraoke->setMix(0.4f);
+        if (eqSyahrini == nullptr) {
+            eqSyahrini = new Superpowered::ThreeBandEQ(sampleRate);
+            eqSyahrini->enabled = true;
+            eqSyahrini->low = 0.3f;   // [SOLUSI NADA CEWE] Potong Bass biar nggak berat!
+            eqSyahrini->mid = 1.1f;   // Suara vokal tengah normal
+            eqSyahrini->high = 1.8f;  // Naikkan Treble biar suara bening dan merdu
+        }
 
-        // 4. Setup Efek Rapper TREASURE (Flanger)
-        efekTreasure = new Superpowered::Flanger(sampleRate);
-        efekTreasure->enabled = true;
+        if (echoKaraoke == nullptr) {
+            echoKaraoke = new Superpowered::Echo(sampleRate);
+            echoKaraoke->enabled = true;
+            echoKaraoke->setMix(0.3f);
+        }
+
+        if (efekAutotune == nullptr) {
+            // [SOLUSI AUTOTUNE] Ini mesin Pitch Correction aslinya!
+            efekAutotune = new Superpowered::AutomaticVocalPitchCorrection(sampleRate);
+            efekAutotune->enabled = true;
+        }
 
         mRecordStream->requestStart();
         mPlayStream->requestStart();
-        LOGI("Mesin Superpowered & Oboe Berjalan!");
+        LOGI("Mesin Oboe Berjalan!");
         return true;
     }
 
@@ -81,16 +89,15 @@ public:
         if (mPlayStream) { mPlayStream->requestStop(); mPlayStream->close(); mPlayStream.reset(); }
         if (mRecordStream) { mRecordStream->requestStop(); mRecordStream->close(); mRecordStream.reset(); }
 
-        // Bersihkan memori saat mic dimatikan
-        delete reverbSyahrini;
-        delete echoKaraoke;
-        delete efekTreasure;
-        LOGI("Mesin Dimatikan.");
+        // ==============================================================
+        // KITA TIDAK LAGI MENGHAPUS EFEK DI SINI! (No more `delete`)
+        // Inilah kunci utama yang akan membasmi semua error/bug saat pindah mode
+        // ==============================================================
+        LOGI("Mesin Oboe Dimatikan.");
     }
 
     void setMode(int mode) {
         currentEffectMode = mode;
-        LOGI("Mode efek diubah ke angka: %d", currentEffectMode);
     }
 
     oboe::DataCallbackResult onAudioReady(oboe::AudioStream *audioStream, void *audioData, int32_t numFrames) override {
@@ -99,28 +106,35 @@ public:
 
         if (mRecordStream) {
             float monoBuffer[numFrames];
+            memset(monoBuffer, 0, numFrames * sizeof(float));
             mRecordStream->read(monoBuffer, numFrames, 0);
 
-            // Ubah Mono (Mic) ke Stereo (Kiri-Kanan)
+            // 1. PROSES EFEK MONO
+            // Autotune WAJIB memproses suara mentah mono sebelum dipecah ke stereo
+            if (currentEffectMode == 3 && efekAutotune != nullptr) {
+                efekAutotune->process(monoBuffer, monoBuffer, numFrames);
+            }
+
+            // 2. Ubah Mono (Mic) ke Stereo (Kiri-Kanan)
             for(int i = 0; i < numFrames; i++) {
                 outputBuffer[i*2]     = monoBuffer[i];
                 outputBuffer[i*2 + 1] = monoBuffer[i];
             }
 
-            // PABRIK MAKE-UP SUARA BERDASARKAN PILIHAN UI
+            // 3. PROSES EFEK STEREO
             if (currentEffectMode == 1) {
-                // Mode 1: Syahrini (Reverb elegan)
-                reverbSyahrini->process(outputBuffer, outputBuffer, numFrames);
+                // Mode Syahrini: Disaring lewat EQ (potong bass) dulu, baru dikasih Reverb!
+                if (eqSyahrini) eqSyahrini->process(outputBuffer, outputBuffer, numFrames);
+                if (reverbSyahrini) reverbSyahrini->process(outputBuffer, outputBuffer, numFrames);
             }
             else if (currentEffectMode == 2) {
-                // Mode 2: Karaoke (Gema luas)
-                echoKaraoke->process(outputBuffer, outputBuffer, numFrames);
-                reverbSyahrini->process(outputBuffer, outputBuffer, numFrames);
+                // Mode Karaoke
+                if (echoKaraoke) echoKaraoke->process(outputBuffer, outputBuffer, numFrames);
+                if (reverbSyahrini) reverbSyahrini->process(outputBuffer, outputBuffer, numFrames);
             }
             else if (currentEffectMode == 3) {
-                // Mode 3: Rapper TREASURE Vibe (Flanger + sedikit echo)
-                efekTreasure->process(outputBuffer, outputBuffer, numFrames);
-                echoKaraoke->process(outputBuffer, outputBuffer, numFrames);
+                // Mode Autotune: Vokal udah otomatis merdu, kita tambahin echo sedikit aja
+                if (echoKaraoke) echoKaraoke->process(outputBuffer, outputBuffer, numFrames);
             }
         }
 
