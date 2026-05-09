@@ -10,9 +10,10 @@ find_package(oboe REQUIRED CONFIG)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/Superpowered)
 
 # 2. Hubungkan library Superpowered khusus untuk HP Android
+# PERHATIKAN BARIS DI BAWAH INI: Kata "/lib/" sudah dihapus!
 add_library(Superpowered STATIC IMPORTED)
 set_target_properties(Superpowered PROPERTIES IMPORTED_LOCATION
-        ${CMAKE_CURRENT_SOURCE_DIR}/Superpowered/lib/libSuperpoweredAndroid${ANDROID_ABI}.a)
+        ${CMAKE_CURRENT_SOURCE_DIR}/Superpowered/libSuperpoweredAndroid${ANDROID_ABI}.a)
 
 # 3. Daftarkan file C++ kita
 add_library(karaokego SHARED native-lib.cpp)
@@ -21,4 +22,4 @@ add_library(karaokego SHARED native-lib.cpp)
 target_link_libraries(karaokego
         log
         oboe::oboe
-        Superpowered) # <--- Ini yang bikin C++ kamu jadi sakti
+        Superpowered)
