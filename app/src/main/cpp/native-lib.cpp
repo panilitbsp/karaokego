@@ -55,15 +55,15 @@ public:
 
         int sampleRate = mPlayStream->getSampleRate();
 
-        // 1. Setup Efek Syahrini (Reverb / Gema Kamar Mandi Mewah)
+        // 1. Setup Efek Syahrini
         reverbSyahrini = new Superpowered::Reverb(sampleRate);
         reverbSyahrini->enabled = true;
-        reverbSyahrini->setMix(0.3f); // 30% efek, 70% suara asli (biar empuk)
+        reverbSyahrini->mix = 0.3f; // UBAH setMix menjadi mix
 
-        // 2. Setup Efek Karaoke (Gema Luas)
+        // 2. Setup Efek Karaoke
         echoKaraoke = new Superpowered::Echo(sampleRate);
         echoKaraoke->enabled = true;
-        echoKaraoke->setMix(0.4f);
+        echoKaraoke->mix = 0.4f; // UBAH setMix menjadi mix
 
         // 3. Setup Efek Swag Rapper TREASURE (Digital Flanger)
         // Karena autotune asli butuh set kunci nada (Do Re Mi),

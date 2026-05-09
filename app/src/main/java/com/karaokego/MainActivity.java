@@ -70,7 +70,8 @@ public class MainActivity extends AppCompatActivity {
                 "😎 Mode Autotune (Vibe Rapper TREASURE)"
         };
 
-        AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.Theme_AppCompat_Dialog_Alert);
+        // UBAH MENJADI (Hapus koma dan tulisan R.style-nya):
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Pilih Efek Suara");
 
         // Menampilkan pilihan (Radio Button)
