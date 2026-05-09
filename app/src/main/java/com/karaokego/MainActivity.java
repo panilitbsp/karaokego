@@ -1,5 +1,6 @@
 package com.karaokego;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -16,15 +17,16 @@ public class MainActivity extends AppCompatActivity {
 
     private static final int PERMISSION_RECORD_AUDIO = 1;
 
-    // Deklarasi fungsi JNI C++
+    // --- Jembatan ke Mesin C++ ---
     public native void startAudioEngine();
     public native void stopAudioEngine();
+    public native void setAudioMode(int mode); // Ini buat ngirim pilihan mode ke C++
 
     private TextView tvStatus;
-    private ImageView ivMic;
+    private ImageView ivMic, btnSettings;
 
-    // Variabel untuk menyimpan status Mic (Awalnya mati / false)
     private boolean isMicOn = false;
+    private int modeTerpilih = 0; // 0: Ori, 1: Syahrini, 2: Karaoke, 3: Treasure
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,56 +35,77 @@ public class MainActivity extends AppCompatActivity {
 
         tvStatus = findViewById(R.id.tvStatus);
         ivMic = findViewById(R.id.ivMic);
+        btnSettings = findViewById(R.id.btnSettings);
 
-        // Langsung todong izin mic saat aplikasi dibuka
         mintaIzinMic();
 
-        // Logika saat gambar Mic ditekan
+        // 1. Logika Klik Tombol Gear (Pengaturan Mode)
+        btnSettings.setOnClickListener(v -> bukaMenuPilihanEfek());
+
+        // 2. Logika Klik Tombol Mic (On/Off)
         ivMic.setOnClickListener(v -> {
-            // Cek izin dulu
             if (!cekkIzinMic()) {
-                Toast.makeText(this, "Kasih izin mic dulu dong!", Toast.LENGTH_SHORT).show();
                 mintaIzinMic();
-                return; // Stop proses kalau belum ada izin
+                return;
             }
 
-            // Balikkan status (kalau false jadi true, kalau true jadi false)
             isMicOn = !isMicOn;
 
             if (isMicOn) {
-                // UI: Ubah jadi ON
-                tvStatus.setText("MIC ON \uD83C\uDFA4");
-                tvStatus.setTextColor(Color.parseColor("#00E676")); // Hijau neon
-
-                // Animasi membesar sedikit (Skala 1.05x)
-                ivMic.animate().scaleX(1.05f).scaleY(1.05f).setDuration(150).start();
-
-                // Nyalakan mesin C++
+                nyalakanMicUI();
                 startAudioEngine();
             } else {
-                // UI: Ubah jadi OFF
-                tvStatus.setText("MIC OFF");
-                tvStatus.setTextColor(Color.parseColor("#555555")); // Abu-abu redup
-
-                // Animasi kembali ke ukuran normal (Skala 1.0x)
-                ivMic.animate().scaleX(1.0f).scaleY(1.0f).setDuration(150).start();
-
-                // Matikan mesin C++
+                matikanMicUI();
                 stopAudioEngine();
             }
         });
     }
 
+    // --- Fungsi buat nampilin Dialog Pilihan Mode ---
+    private void bukaMenuPilihanEfek() {
+        String[] listMode = {
+                "🎙️ Mode Original",
+                "✨ Mode Syahrini (Percantik)",
+                "🎤 Mode Karaoke (Gema Luas)",
+                "😎 Mode Autotune (Vibe Rapper TREASURE)"
+        };
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.Theme_AppCompat_Dialog_Alert);
+        builder.setTitle("Pilih Efek Suara");
+
+        // Menampilkan pilihan (Radio Button)
+        builder.setSingleChoiceItems(listMode, modeTerpilih, (dialog, which) -> {
+            modeTerpilih = which;
+
+            // Langsung kirim angkanya ke C++ (0, 1, 2, atau 3)
+            setAudioMode(modeTerpilih);
+
+            Toast.makeText(this, "Efek diganti ke: " + listMode[which], Toast.LENGTH_SHORT).show();
+            dialog.dismiss();
+        });
+
+        builder.show();
+    }
+
+    private void nyalakanMicUI() {
+        tvStatus.setText("MIC ON \uD83C\uDFA4");
+        tvStatus.setTextColor(Color.parseColor("#00E676"));
+        ivMic.animate().scaleX(1.1f).scaleY(1.1f).setDuration(200).start();
+    }
+
+    private void matikanMicUI() {
+        tvStatus.setText("MIC OFF");
+        tvStatus.setTextColor(Color.parseColor("#555555"));
+        ivMic.animate().scaleX(1.0f).scaleY(1.0f).setDuration(200).start();
+    }
+
     private boolean cekkIzinMic() {
-        return ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
-                == PackageManager.PERMISSION_GRANTED;
+        return ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED;
     }
 
     private void mintaIzinMic() {
         if (!cekkIzinMic()) {
-            ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.RECORD_AUDIO},
-                    PERMISSION_RECORD_AUDIO);
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.RECORD_AUDIO}, PERMISSION_RECORD_AUDIO);
         }
     }
 

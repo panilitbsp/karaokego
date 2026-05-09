@@ -6,6 +6,21 @@
     android:layout_height="match_parent"
     android:background="#121212">
 
+    <ImageView
+        android:id="@+id/btnSettings"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_marginTop="24dp"
+        android:layout_marginEnd="24dp"
+        android:padding="8dp"
+        android:clickable="true"
+        android:focusable="true"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:src="@drawable/ic_settings" app:tint="#FFFFFF"
+        android:contentDescription="Pengaturan Efek Suara"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
     <!-- 1. Gambar Mic ditaruh paling atas agar ID-nya dibaca duluan oleh sistem -->
     <ImageView
         android:id="@+id/ivMic"
